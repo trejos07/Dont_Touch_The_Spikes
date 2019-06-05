@@ -7,24 +7,18 @@ using TMPro;
 public class SimpleGameMenu : MonoBehaviour
 {
     public static SimpleGameMenu Instance;
-
+    
     [SerializeField] Button play_button;
     [SerializeField] Button restart_button;
     [SerializeField] Button lobby_button;
     [SerializeField] TextMeshProUGUI score_text;
+    [SerializeField] TextMeshProUGUI bestScore_text;
+    [SerializeField] TextMeshProUGUI lobbybestScore_text;
     [SerializeField] GameObject lobby_Panel;
     [SerializeField] GameObject game_Panel;
     [SerializeField] GameObject endGame_Panel;
+    [SerializeField] new Camera camera;
 
-    #region Accesores
-    public Button Play_button { get => play_button; set => play_button = value; }
-    public Button Restart_button { get => restart_button; set => restart_button = value; }
-    public Button Lobby_button1 { get => lobby_button; set => lobby_button = value; }
-    public TextMeshProUGUI Score_text { get => score_text; set => score_text = value; }
-    public GameObject Lobby_Panel1 { get => lobby_Panel; set => lobby_Panel = value; }
-    public GameObject Game_Panel { get => game_Panel; set => game_Panel = value; }
-    public GameObject EndGame_Panel { get => endGame_Panel; set => endGame_Panel = value; } 
-    #endregion
 
     private void Awake()
     {
@@ -41,6 +35,8 @@ public class SimpleGameMenu : MonoBehaviour
     }
     void SetUpEvents()//establece los eventos de los bonotenes de UI
     {
+        
+
         //cuando hago clik en el boton de play
         play_button.onClick.AddListener(() => {
             lobby_Panel.SetActive(false);
@@ -76,11 +72,26 @@ public class SimpleGameMenu : MonoBehaviour
     {
         Spike.OnDeathTrigger += () => { endGame_Panel.SetActive(true); game_Panel.SetActive(true); };
         Game.Instance.OnScoreChange += SetScore;
-        Game.Instance.OnStartGame += () => game_Panel.SetActive(true); 
+        Game.Instance.OnStartGame += () => game_Panel.SetActive(true);
+        Game.Instance.OnEndGame += SetBestScore;
     }
     public void SetScore(int s)//actualiza el texto que muestra el score
     {
         score_text.text = s.ToString();
+        SetColor();
     }
+    public void SetColor()
+    {
+        Color color_1 = Color.Lerp(Game.Instance.Color, Color.white, 0.3f);
+        Color color_2 = Color.Lerp(Game.Instance.Color, Color.black, 0.3f);
 
+        camera.backgroundColor = color_1;
+        game_Panel.transform.Find("Image").GetComponent<Image>().color = color_2;
+        score_text.color = color_1;
+    }
+    public void SetBestScore()
+    {
+        bestScore_text.text = Game.Instance.BestScore.ToString();
+        lobbybestScore_text.text = Game.Instance.BestScore.ToString();
+    }
 }

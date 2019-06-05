@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,12 +20,18 @@ public class Player : MonoBehaviour
 
     private new Rigidbody2D rigidbody;
     private new SpriteRenderer renderer;
+    private EchoEffect echo;
     private Color basic;
+
+    public event Action OnChangeDir;
 
     #region Accesores
     public static Player Instance { get => instance; set => instance = value; }
-    public int Dir { get => dir; }
     public bool Alive { get => alive; set { alive = value; renderer.color = value ? basic : Color.black; } }
+    public int Dir { get => dir; set {
+            dir = value;
+            OnChangeDir?.Invoke();
+        } }
     #endregion
 
     private void Awake()
@@ -37,6 +44,7 @@ public class Player : MonoBehaviour
         //Obtengo componentes 
         rigidbody = GetComponent<Rigidbody2D>();
         renderer = GetComponent<SpriteRenderer>();
+        echo = GetComponent<EchoEffect>();
         basic = renderer.color;
         OnLobby();// el jugador comienza en el lobby
     }
@@ -49,7 +57,7 @@ public class Player : MonoBehaviour
     {
         if(Alive)//si estoy vivo
         {
-            GetImputs();// cheque los inputs
+            
             if (tap) // si hice tap
             {
                 SoundManager.instance.Play("Tap");//reproducir sonido de tap
@@ -59,6 +67,11 @@ public class Player : MonoBehaviour
             ClampVelocity();// controlo la maxima velocidad del jugador
         }
     }
+    private void Update()
+    {
+        if (Alive)
+            GetImputs();// cheque los inputs
+    }
     private void OnCollisionEnter2D(Collision2D collision)//si choque
     {
         if(Alive)//si estoy vivo
@@ -66,7 +79,7 @@ public class Player : MonoBehaviour
             rigidbody.velocity = Vector2.zero;
             ChangeDir();//cambio de direcion al chocar
             Jump(jumForce / 2);
-            rigidbody.AddForce(Vector3.right * dir * wallKnockBack * Time.deltaTime, ForceMode2D.Impulse);//agrego un impulso extra
+            rigidbody.AddForce(Vector3.right * Dir * wallKnockBack * Time.deltaTime, ForceMode2D.Impulse);//agrego un impulso extra
             SoundManager.instance.Play("Wall"); //reprodusco sonido de golpe contra la pared
         }
         
@@ -75,8 +88,9 @@ public class Player : MonoBehaviour
 
     public void OnLobby()//cuando el jugador va al lobby
     {
+        echo.Active = false;
         Alive = true;
-        dir = 1;
+        Dir = 1;
         rigidbody.simulated = false;
         transform.position = Vector2.zero;
     }
@@ -85,10 +99,12 @@ public class Player : MonoBehaviour
         if(!Alive)
             Alive = true;
 
-        dir = 1;
+        Dir = 1;
         rigidbody.simulated = true;
         rigidbody.position = Vector2.zero;
         Spike.OnDeathTrigger += Death;
+        Jump(jumForce / 2);
+        echo.Active = true;
     }
     public void GetImputs()//obtiene los inputs dependiendo del dispositivo
     {
@@ -110,22 +126,22 @@ public class Player : MonoBehaviour
             {
                 tap = true;
             }
-            else if (Input.touches[0].phase == TouchPhase.Ended || Input.touches[0].phase == TouchPhase.Canceled)
-            {
-                tap = false;
-            }
+            //else if (Input.touches[0].phase == TouchPhase.Ended || Input.touches[0].phase == TouchPhase.Canceled)
+            //{
+            //    //tap = false;
+            //}
         }
         #endregion
     }
     public void ChangeDir()//cambia de direcion
     {
-        dir *= -1;
+        Dir *= -1;
     }
     public void Jump(float f)//agrega una fuerza hacia ariiba y hacia la direcion que va el jugador
     {
         rigidbody.velocity = Vector2.zero;
         rigidbody.AddForce(Vector2.up * f * Time.fixedDeltaTime, ForceMode2D.Impulse);
-        rigidbody.AddForce(Vector2.right * dir * sideSpeed * Time.fixedDeltaTime, ForceMode2D.Impulse);
+        rigidbody.AddForce(Vector2.right * Dir * sideSpeed * Time.fixedDeltaTime, ForceMode2D.Impulse);
     }
     public void ClampVelocity()//controla la velocidad maxima y minima del jugador
     {
@@ -138,7 +154,7 @@ public class Player : MonoBehaviour
     {
         Jump(jumForce / 2);
         Alive = false;
-        
+        echo.Active = false;
         Spike.OnDeathTrigger -= Death;
         SoundManager.instance.Play("Death");
     }

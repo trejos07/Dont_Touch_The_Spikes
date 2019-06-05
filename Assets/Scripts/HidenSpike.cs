@@ -10,8 +10,9 @@ public class HidenSpike: Spike
 
     public bool IsHide { get => isHide; set { isHide = value; Move(); } }//establece si esta escondido o no el Spìke y lo mueve a su logar
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         rigidbody = GetComponent<Rigidbody2D>();
         rigidbody.gravityScale = 0;
         Move();
